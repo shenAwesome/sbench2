@@ -1,0 +1,9 @@
+{
+    "title": "hello world",
+    "modules": "",
+    "actions": "Layers,Draw",
+    "MapCore": {
+        "projection": "EPSG:3857",
+        "extent": "15435404,-5165541,16860093,-3752115"
+    }
+}

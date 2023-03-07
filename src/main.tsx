@@ -1,15 +1,11 @@
-import React from 'react'
-import ReactDOM from 'react-dom/client'
-import { App, Module } from './App'
-import './index.css'
+import { Bench, Test2Module, TestModule } from './Bench'
+import { MapCore } from './module/MapCore'
+import { Layers } from './module/Layers'
+import { Draw } from './module/Draw'
 
 
-const modules = [] as Module[]
+const bench = new Bench({
+  TestModule, Test2Module, MapCore, Layers, Draw
+})
 
-modules.push(new Module())
-
-ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
-  <React.StrictMode>
-    <App modules={modules} />
-  </React.StrictMode>,
-)
+bench.start()
