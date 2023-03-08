@@ -1,23 +1,24 @@
+import Zoom from 'ol/control/Zoom'
 import Map from 'ol/Map'
 import {
-    get as getProjection, getPointResolution, transform
+    get as getProjection
 } from 'ol/proj'
 import OSM from 'ol/source/OSM'
-import ZoomToExtent from 'ol/control/ZoomToExtent'
-import Zoom from 'ol/control/Zoom'
+import DragPan from 'ol/interaction/DragPan';
+import MouseWheelZoom from 'ol/interaction/MouseWheelZoom'
+import { defaults as defaultInteractions } from 'ol/interaction'
 
-
-import React, { useEffect, useRef, useState } from 'react'
+import { useEffect } from 'react'
 import { Module } from "../Bench"
 
 import $ from "cash-dom"
+import _ from 'lodash'
+import Control from 'ol/control/Control'
 import TileLayer from "ol/layer/Tile"
 import 'ol/ol.css'
 import View from "ol/View"
-import './MapCore.scss'
-import Control from 'ol/control/Control'
-import { until } from '../util/util'
-import _ from 'lodash'
+import { sleep, until } from '../util/util'
+import '../css/MapCore.scss'
 
 interface Config {
     projection: string
@@ -29,6 +30,7 @@ interface State {
 
 class MapCore extends Module<Config, State> {
     map: Map
+    mapReady = false
 
     render() {
         const { extent } = this.state
@@ -38,29 +40,31 @@ class MapCore extends Module<Config, State> {
             const { root, mainDiv } = this
             if (!root.parent().length) {
                 root.appendTo(mainDiv)
-                this.setState({ extent: '' })
                 until(() => !!this.map.getSize()).then(() => {
-                    this.setState({ extent })
+                    this.mapReady = true
+                    this.setState({})
+                    //set padding
+                    const screenDiv = this.get('.screen')
+                    new ResizeObserver(_.debounce(() => {
+                        const rect1 = screenDiv.getBoundingClientRect() as any,
+                            rect2 = root.get(0).getBoundingClientRect() as any,
+                            padding = 'top,right,bottom,left'.split(',').map(k => Math.abs(rect1[k] - rect2[k]))
+                        map.getView().padding = padding
+                        console.log('padding: ', padding);
+                    }, 200)).observe(screenDiv)
                 })
-                //set padding
-                const screenDiv = this.get('.screen')
-                new ResizeObserver(_.debounce(() => {
-                    const rect1 = screenDiv.getBoundingClientRect() as any,
-                        rect2 = root.get(0).getBoundingClientRect() as any,
-                        padding = 'top,right,bottom,left'.split(',').map(k => Math.abs(rect1[k] - rect2[k]))
-                    map.getView().padding = padding
-                }, 200)).observe(screenDiv)
             }
         }, [])
 
-        useEffect(() => {
-            if (extent != this.getMapExtent()) {
-                const _extent = extent.split(',').map(e => parseFloat(e))
-                map.getView().fit(_extent)
-            }
-        }, [extent])
+        const zoomTo = this.mapReady ? extent : null
 
-        //map.getView().padding
+        useEffect(() => {
+            if (zoomTo && zoomTo != this.getMapExtent()) {
+                const _extent = zoomTo.split(',').map(e => parseFloat(e))
+                map.getView().fit(_extent)
+                console.log('zoom to: ', _extent);
+            }
+        }, [zoomTo])
     }
 
     getMapExtent() {
@@ -91,7 +95,14 @@ class MapCore extends Module<Config, State> {
                 zoom: 2,
                 projection
             }),
-            controls: []
+            controls: [],
+            interactions: defaultInteractions({
+                dragPan: false,
+                mouseWheelZoom: false
+            }).extend([
+                new DragPan({ kinetic: null }),
+                new MouseWheelZoom({ duration: 200 })
+            ]),
         })
         map.addControl(new Zoom({ target: controlDiv }))
         map.addControl(new ButtonControl({
@@ -103,12 +114,10 @@ class MapCore extends Module<Config, State> {
         }))
         map.on('moveend', () => {
             const extent = this.getMapExtent()
-            this.setState({ extent })
+            if (this.mapReady) this.setState({ extent })
         })
         console.log(this.map)
     }
-
-
 }
 
 interface ButtonControlOption {
@@ -131,3 +140,4 @@ class ButtonControl extends Control {
 }
 
 export { MapCore }
+

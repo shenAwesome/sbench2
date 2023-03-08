@@ -60,7 +60,7 @@ class Bench {
 
   private createUI() {
 
-    const { modules } = this
+    const { modules, storeKey } = this
 
     return () => {
 
@@ -90,9 +90,14 @@ class Bench {
         }}>{id}</button>
       })
 
+      function refresh() {
+        localStorage.removeItem(storeKey)
+        window.location.reload()
+      }
+
       return <div className="Bench" ref={rootRef}>
         <div className='head'>
-          <div className='fill'>
+          <div className='fill' onDoubleClick={refresh}>
 
           </div>
           <div className='btns'>
@@ -148,6 +153,12 @@ class Bench {
     splash.addClass('hide')
     await sleep(200)
     splash.remove()
+
+    this.getModule('Layers').active = true
+  }
+
+  getModule(id: string) {
+    return this.modules.find(m => m.id == id)
   }
 
   public update() {
@@ -199,6 +210,17 @@ abstract class Module<C = any, S = any> {
     this._active = val
     this.update()
   }
+
+  useState(key: keyof S, defaultVal?: S[keyof S]) {
+    const { state } = this
+    if (state[key] == undefined) state[key] = defaultVal
+    const val = state[key]
+    const setVal = (val: any) => this.setState({
+      [key]: val
+    } as any)
+    return [val, setVal] as [typeof val, (v: typeof val) => void]
+  }
+
 }
 
 class Test2Module extends Module<{

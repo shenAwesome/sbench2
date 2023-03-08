@@ -1,0 +1,24 @@
+.Tree {
+    li {
+        list-style-type: none;
+    }
+
+    ul {
+        padding: 0;
+        margin: 0;
+    }
+
+    .treeItem {
+        padding: 5px;
+
+        &:hover {
+            background: silver;
+        }
+
+        input {
+            position: relative;
+            top: 1px;
+            pointer-events: none;
+        }
+    }
+}
