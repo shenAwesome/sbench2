@@ -58,6 +58,7 @@ body>.splash_mask {
         border: none;
         background: transparent;
         color: white;
+        cursor: pointer;
 
         &.active {
           background: white;
@@ -99,14 +100,9 @@ body>.splash_mask {
         width: 0px;
         transition: width 200ms;
 
-        &.panel-enter-active {
+        &.show {
           width: 300px;
         }
-
-        &.panel-enter-done {
-          width: 300px;
-        }
-
       }
     }
 

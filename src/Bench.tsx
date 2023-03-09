@@ -1,10 +1,9 @@
 import _ from 'lodash'
-import $ from "cash-dom"
-import React, { useEffect, useRef, useState } from 'react'
+import $, { Cash } from "cash-dom"
+import React, { DependencyList, EffectCallback, useEffect as _useEffect, useRef, useState } from 'react'
 import ReactDOM from 'react-dom/client'
 import './Bench.scss'
-import { sleep, useWatch } from './util/util'
-import { CSSTransition } from 'react-transition-group'
+import { sleep, useWatch, until } from './util/util'
 import classNames from 'classnames'
 
 interface BenchConfig {
@@ -14,11 +13,23 @@ interface BenchConfig {
 }
 
 
+let currentModule = null as Module
+
+function useEffect(effect: EffectCallback, deps?: DependencyList) {
+  _useEffect(() => {
+    const { initialized } = currentModule
+    if (initialized) {
+      return effect()
+    }
+  }, deps)
+}
+
 class Bench {
 
   private modules = [] as Module[]
   private stateVersion = 0
   private storeKey = "test"
+  private root = null as Cash
 
   constructor(modules: { [id: string]: new () => Module }) {
     Object.keys(modules).forEach(id => {
@@ -27,7 +38,7 @@ class Bench {
       Object.assign(m, { id, update })
       this.modules.push(m)
     })
-    this.saveState = _.debounce(this.saveState, 1000)
+    this.saveState = _.debounce(this.saveState, 200)
   }
 
   private async autoWire(config: any) {
@@ -47,27 +58,26 @@ class Bench {
     }
     modules.length = 0
     modules.push(...solved)
-    //set state from config then from local storage 
-    const state = JSON.parse(localStorage.getItem(this.storeKey) || '{}')
-    console.log('state: ', state)
-    //init
-    for (const m of modules) {
-      Object.assign(m.config, config[m.id])
-      Object.assign(m.state, m.config, state[m.id])
-      await m.init()
-    }
   }
 
   private createUI() {
 
     const { modules, storeKey } = this
+    const self = this
 
     return () => {
 
       useWatch(() => this.stateVersion, 20)
       const rootRef = useRef<HTMLDivElement>()
-      modules.forEach(m => Object.assign(m, { _rootRef: rootRef }))
-      modules.forEach(m => m.render())
+
+      _useEffect(() => {
+        self.root = $(rootRef.current)
+      }, [])
+
+      modules.forEach(m => {
+        currentModule = m
+        m.render()
+      })
 
       const toggleModule = (mid: string) => {
         const module = modules.find(m => m.id == mid)
@@ -75,7 +85,6 @@ class Bench {
         modules.forEach(m => m.active = false)
         module.active = active
       }
-
 
       const panel = modules.filter(m => m.active).map(m => {
         return <div key={m.id} className={m.id}>
@@ -95,10 +104,11 @@ class Bench {
         window.location.reload()
       }
 
+      const showPanel = panel.length > 0
+
       return <div className="Bench" ref={rootRef}>
         <div className='head'>
           <div className='fill' onDoubleClick={refresh}>
-
           </div>
           <div className='btns'>
             {btns}
@@ -108,11 +118,9 @@ class Bench {
           <div className='benchMain'></div>
           <div className='shell'>
             <div className='screen'></div>
-            <CSSTransition nodeRef={nodeRef} in={panel.length > 0} timeout={200} classNames="panel">
-              <div className='benchSidePanel' ref={nodeRef}>
-                {panel}
-              </div>
-            </CSSTransition>
+            <div className={classNames('benchSidePanel', { show: showPanel })} ref={nodeRef}>
+              {panel}
+            </div>
           </div>
         </div>
       </div>
@@ -128,6 +136,7 @@ class Bench {
   }
 
   config: BenchConfig
+  loaded = false
 
   public async start() {
     const root = $('#root').get(0) as HTMLElement
@@ -143,6 +152,8 @@ class Bench {
     document.title = config.title
 
     await this.autoWire(config)
+    this.getModule('Layers').active = true
+
     const UI = this.createUI()
     ReactDOM.createRoot(root).render(
       <React.StrictMode>
@@ -150,11 +161,25 @@ class Bench {
       </React.StrictMode>,
     )
 
+    await until(() => !!this.root)
+    //init modules, set state from config then from local storage 
+    const { modules } = this
+    const state = JSON.parse(localStorage.getItem(this.storeKey) || '{}')
+    for (const m of modules) {
+      m.root = this.root
+      Object.assign(m.config, config[m.id])
+      Object.assign(m.state, m.config, state[m.id])
+      await m.init()
+      m.initialized = true
+    }
+
+
+    this.update()
+
     splash.addClass('hide')
     await sleep(200)
     splash.remove()
-
-    this.getModule('Layers').active = true
+    this.loaded = true
   }
 
   getModule(id: string) {
@@ -163,23 +188,24 @@ class Bench {
 
   public update() {
     this.stateVersion++
-    this.saveState()
+    if (this.loaded) this.saveState()
   }
 }
 
 
 abstract class Module<C = any, S = any> {
   private _active = false
-  private _rootRef = null as React.MutableRefObject<HTMLDivElement>
+  public root = null as Cash
+  public initialized = false
 
   panel = <div></div>
 
   find(query: string) {
-    return $(this._rootRef.current).find(query)
+    return this.root.find(query)
   }
 
   get(query: string) {
-    return $(this._rootRef.current).find(query).get(0)
+    return this.find(query).get(0)
   }
 
   get mainDiv() {
@@ -272,4 +298,4 @@ class TestModule extends Module<{
 }
 
 
-export { Bench, Module, TestModule, Test2Module }
+export { Bench, Module, TestModule, Test2Module, useEffect }

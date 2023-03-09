@@ -1,15 +1,13 @@
 import Zoom from 'ol/control/Zoom'
+import { defaults as defaultInteractions } from 'ol/interaction'
+import DragPan from 'ol/interaction/DragPan'
+import MouseWheelZoom from 'ol/interaction/MouseWheelZoom'
 import Map from 'ol/Map'
 import {
     get as getProjection
 } from 'ol/proj'
 import OSM from 'ol/source/OSM'
-import DragPan from 'ol/interaction/DragPan';
-import MouseWheelZoom from 'ol/interaction/MouseWheelZoom'
-import { defaults as defaultInteractions } from 'ol/interaction'
-
-import { useEffect } from 'react'
-import { Module } from "../Bench"
+import { Module, useEffect } from "../Bench"
 
 import $ from "cash-dom"
 import _ from 'lodash'
@@ -17,8 +15,8 @@ import Control from 'ol/control/Control'
 import TileLayer from "ol/layer/Tile"
 import 'ol/ol.css'
 import View from "ol/View"
-import { sleep, until } from '../util/util'
 import '../css/MapCore.scss'
+import { sleep } from '../util/util'
 
 interface Config {
     projection: string
@@ -29,61 +27,42 @@ interface State {
 }
 
 class MapCore extends Module<Config, State> {
-    map: Map
-    mapReady = false
+    public map: Map
+
+    get view() {
+        return this.map?.getView()
+    }
+
+    setExtent(extent: string) {
+        if (extent != this.getExtent()) {
+            const _extent = extent.split(',').map(e => parseFloat(e))
+            this.view.fit(_extent)
+        }
+    }
 
     render() {
         const { extent } = this.state
-        const { map } = this
-
         useEffect(() => {
-            const { root, mainDiv } = this
-            if (!root.parent().length) {
-                root.appendTo(mainDiv)
-                until(() => !!this.map.getSize()).then(() => {
-                    this.mapReady = true
-                    this.setState({})
-                    //set padding
-                    const screenDiv = this.get('.screen')
-                    new ResizeObserver(_.debounce(() => {
-                        const rect1 = screenDiv.getBoundingClientRect() as any,
-                            rect2 = root.get(0).getBoundingClientRect() as any,
-                            padding = 'top,right,bottom,left'.split(',').map(k => Math.abs(rect1[k] - rect2[k]))
-                        map.getView().padding = padding
-                        console.log('padding: ', padding);
-                    }, 200)).observe(screenDiv)
-                })
-            }
-        }, [])
-
-        const zoomTo = this.mapReady ? extent : null
-
-        useEffect(() => {
-            if (zoomTo && zoomTo != this.getMapExtent()) {
-                const _extent = zoomTo.split(',').map(e => parseFloat(e))
-                map.getView().fit(_extent)
-                console.log('zoom to: ', _extent);
-            }
-        }, [zoomTo])
+            this.setExtent(extent)
+        }, [extent])
     }
 
-    getMapExtent() {
+    getExtent() {
         const view = this.map.getView()
         const _extent = view.calculateExtent()
         const isDegree = view.getProjection().getUnits() == 'degrees'
         return _extent.map(d => isDegree ? d.toFixed(6) : d.toFixed(0)).join(',')
     }
 
-    root = $(`<div class='mapCore'></div>`)
-
     async init() {
-        const { root, config } = this
+        const { config, mainDiv } = this
         const projection = getProjection(this.config.projection)
-        Object.assign(window, { getMapExtent: () => this.getMapExtent() })
-        const target = $(`<div class='benchMap'></div>`).appendTo(root).get(0)
-        const controlDiv = $(`<div class='controls'></div>`).appendTo(root).get(0)
+        Object.assign(window, { getMapExtent: () => this.getExtent() })
+        const target = $(`<div class='benchMap'></div>`).appendTo(mainDiv).get(0)
+        const screenDiv = this.get('.screen')
+        const controlDiv = $(`<div class='controls'></div>`).appendTo(screenDiv).get(0)
         const baseLayer = new TileLayer({
-            source: new OSM(),
+            source: new OSM()
         })
         const map = this.map = new Map({
             layers: [
@@ -113,10 +92,20 @@ class MapCore extends Module<Config, State> {
             }
         }))
         map.on('moveend', () => {
-            const extent = this.getMapExtent()
-            if (this.mapReady) this.setState({ extent })
+            const extent = this.getExtent()
+            this.setState({ extent })
         })
-        console.log(this.map)
+
+        const updatePadding = () => {
+            const rect1 = screenDiv.getBoundingClientRect() as any,
+                rect2 = mainDiv.get(0).getBoundingClientRect() as any,
+                padding = 'top,right,bottom,left'.split(',').map(k => Math.abs(rect1[k] - rect2[k]))
+
+            map.getView().padding = padding
+        }
+        updatePadding()
+        new ResizeObserver(_.debounce(updatePadding, 200)).observe(screenDiv)
+        this.setExtent(this.state.extent)
     }
 }
 

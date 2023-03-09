@@ -1,15 +1,18 @@
-.mapCore {
+.benchMain {
     position: relative;
     height: 100%;
 
     >.benchMap {
         height: 100%;
     }
+}
 
+.screen {
     >.controls {
         top: 15px;
         left: 15px;
         position: absolute;
+        pointer-events: all;
 
         >div {
             position: static;

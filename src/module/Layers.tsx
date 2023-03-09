@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react"
-import { Module } from "../Bench"
+import { Module, useEffect } from "../Bench"
 import { Tree, TreeNode } from "../comp/Tree"
+import { MapCore } from "./MapCore"
 
 interface Config {
 
@@ -12,6 +12,10 @@ interface State {
 class Layers extends Module<Config, State> {
 
     panel = <div>hello</div>
+
+    using = {
+        MapCore: null as MapCore
+    }
 
     render() {
 
@@ -71,7 +75,7 @@ class Layers extends Module<Config, State> {
         root.fixChecked(checked)
 
         useEffect(() => {
-            console.log('layer!')
+            console.log(checked.join(','))
         }, [checked.join(',')])
 
         this.panel = <div>
@@ -81,7 +85,7 @@ class Layers extends Module<Config, State> {
 
 
     async init() {
-
+        console.log(this.using.MapCore)
     }
 
 
