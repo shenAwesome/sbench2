@@ -16,7 +16,8 @@ import TileLayer from "ol/layer/Tile"
 import 'ol/ol.css'
 import View from "ol/View"
 import '../css/MapCore.scss'
-import { sleep } from '../util/util'
+import { BenchLayer } from '../layer/BenchLayer'
+import { until } from '../util/util'
 
 interface Config {
     projection: string
@@ -55,6 +56,9 @@ class MapCore extends Module<Config, State> {
     }
 
     async init() {
+
+        await until(() => this.find('.screen').length > 0)
+
         const { config, mainDiv } = this
         const projection = getProjection(this.config.projection)
         Object.assign(window, { getMapExtent: () => this.getExtent() })
@@ -106,6 +110,18 @@ class MapCore extends Module<Config, State> {
         updatePadding()
         new ResizeObserver(_.debounce(updatePadding, 200)).observe(screenDiv)
         this.setExtent(this.state.extent)
+
+        const layer = new BenchLayer('https://sampleserver6.arcgisonline.com/ArcGIS/rest/services/USA/MapServer', {
+            tiled: true
+        })
+
+        const layer2 = new BenchLayer('https://ahocevar.com/geoserver/wms', {
+            layers: 'topp:states'
+        })
+
+        map.addLayer(layer.createLayer())
+        map.addLayer(layer2.createLayer())
+        console.log('map: ', map)
     }
 }
 

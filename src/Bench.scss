@@ -29,68 +29,70 @@ body>.splash_mask {
   bottom: 0;
   right: 0;
   left: 0;
+
+  >.main,
+  >.ui {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+  }
 }
 
-.Bench {
-  background-color: gray;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  cursor: default;
-  user-select: none;
 
-  >.head {
-    height: 40px;
-    background: black;
-    color: white;
+.ui {
+  pointer-events: none;
+
+  >.Bench {
+    height: 100%;
     display: flex;
+    flex-direction: column;
+    cursor: default;
+    user-select: none;
 
-    >.fill {
-      flex: 1 1 auto;
-    }
-
-    >.btns {
-      flex: 0 0 auto;
+    >.head {
+      height: 40px;
+      background: black;
+      color: white;
       display: flex;
+      pointer-events: all;
 
-      >button {
-        min-width: 100px;
-        border: none;
-        background: transparent;
-        color: white;
-        cursor: pointer;
+      >.fill {
+        flex: 1 1 auto;
+      }
 
-        &.active {
-          background: white;
-          color: black;
+      >.btns {
+        flex: 0 0 auto;
+        display: flex;
+
+        >button {
+          min-width: 100px;
+          border: none;
+          background: transparent;
+          color: white;
+          cursor: pointer;
+
+          &.active {
+            background: white;
+            color: black;
+          }
         }
       }
     }
-  }
 
-  >.body {
-    position: relative;
-    flex: 1 1 auto;
-
-    >div {
-      position: absolute;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      top: 0;
-    }
-
-    >.benchMain {
-      background: white;
-    }
-
-    >.shell {
-      pointer-events: none;
+    >.body {
+      position: relative;
+      flex: 1 1 auto;
       display: flex;
 
       >.screen {
         flex: 1 1 auto;
         box-shadow: inset 0 0 2px gray;
+
+        >div {
+          pointer-events: all;
+        }
       }
 
       >.benchSidePanel {
@@ -105,7 +107,5 @@ body>.splash_mask {
         }
       }
     }
-
-
   }
 }

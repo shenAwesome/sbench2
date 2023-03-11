@@ -29,7 +29,6 @@ class Bench {
   private modules = [] as Module[]
   private stateVersion = 0
   private storeKey = "test"
-  private root = null as Cash
 
   constructor(modules: { [id: string]: new () => Module }) {
     Object.keys(modules).forEach(id => {
@@ -63,16 +62,10 @@ class Bench {
   private createUI() {
 
     const { modules, storeKey } = this
-    const self = this
 
     return () => {
 
       useWatch(() => this.stateVersion, 20)
-      const rootRef = useRef<HTMLDivElement>()
-
-      _useEffect(() => {
-        self.root = $(rootRef.current)
-      }, [])
 
       modules.forEach(m => {
         currentModule = m
@@ -106,7 +99,7 @@ class Bench {
 
       const showPanel = panel.length > 0
 
-      return <div className="Bench" ref={rootRef}>
+      return <div className="Bench"  >
         <div className='head'>
           <div className='fill' onDoubleClick={refresh}>
           </div>
@@ -115,12 +108,9 @@ class Bench {
           </div>
         </div>
         <div className='body'>
-          <div className='benchMain'></div>
-          <div className='shell'>
-            <div className='screen'></div>
-            <div className={classNames('benchSidePanel', { show: showPanel })} ref={nodeRef}>
-              {panel}
-            </div>
+          <div className='screen'></div>
+          <div className={classNames('benchSidePanel', { show: showPanel })} ref={nodeRef}>
+            {panel}
           </div>
         </div>
       </div>
@@ -139,7 +129,7 @@ class Bench {
   loaded = false
 
   public async start() {
-    const root = $('#root').get(0) as HTMLElement
+    const root = $('#root')
 
     const splash = $(`<div class='splash_mask'>
        <div class='spash'>
@@ -147,35 +137,40 @@ class Bench {
        </div> 
     </div>`).appendTo(document.body)
 
+
+    root.html(`
+      <div class='main'></div>
+      <div class='ui'></div>
+    `)
+
+    splash.remove()
+
     const config = this.config = await (await fetch('./config.json')).json()
     console.log('config: ', config)
     document.title = config.title
 
     await this.autoWire(config)
     this.getModule('Layers').active = true
-
     const UI = this.createUI()
-    ReactDOM.createRoot(root).render(
+
+    //todo, create map element sepreately. pass root to all modules instead of wait for react
+    ReactDOM.createRoot(root.find('.ui').get(0)).render(
       <React.StrictMode>
         <UI />
       </React.StrictMode>,
     )
-
-    await until(() => !!this.root)
     //init modules, set state from config then from local storage 
     const { modules } = this
     const state = JSON.parse(localStorage.getItem(this.storeKey) || '{}')
     for (const m of modules) {
-      m.root = this.root
+      m.root = root
       Object.assign(m.config, config[m.id])
       Object.assign(m.state, m.config, state[m.id])
       await m.init()
       m.initialized = true
     }
 
-
     this.update()
-
     splash.addClass('hide')
     await sleep(200)
     splash.remove()
@@ -209,7 +204,7 @@ abstract class Module<C = any, S = any> {
   }
 
   get mainDiv() {
-    return this.find('.benchMain')
+    return this.root.children('.main')
   }
 
   get active() {
