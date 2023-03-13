@@ -1,11 +1,12 @@
-import { Module, useEffect, useEffectGlobal } from "../Bench"
+import { BaseState, Module, useEffect, useEffectGlobal } from "../Bench"
 import { Tree, TreeNode } from "../comp/Tree"
 import { MapCore } from "./MapCore"
 
 interface Config {
 
 }
-interface State {
+
+interface State extends BaseState {
     checked: string[]
 }
 

@@ -23,8 +23,10 @@ interface Config {
     projection: string
     extent: string
 }
+
 interface State {
     extent: string
+    active: boolean
 }
 
 class MapCore extends Module<Config, State> {
@@ -46,6 +48,7 @@ class MapCore extends Module<Config, State> {
         useEffect(() => {
             this.setExtent(extent)
         }, [extent])
+
     }
 
     getExtent() {

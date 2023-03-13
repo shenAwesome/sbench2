@@ -153,32 +153,32 @@ class Bench {
     `)
 
     splash.remove()
-
+    //read config
     const config = this.config = await (await fetch('./config.json')).json()
     console.log('config: ', config)
     document.title = config.title
-
+    //auto wire
     await this.autoWire(config)
-    this.getModule('Layers').active = true
-    const UI = this.createUI()
-
-    //todo, create map element sepreately. pass root to all modules instead of wait for react
-    ReactDOM.createRoot(root.find('.ui').get(0)).render(
-      <React.StrictMode>
-        <UI />
-      </React.StrictMode>,
-    )
-    //init modules, set state from config then from local storage 
     const { modules } = this
     const state = JSON.parse(localStorage.getItem(this.storeKey) || '{}')
     for (const m of modules) {
       m.root = root
       Object.assign(m.config, config[m.id])
       Object.assign(m.state, m.config, state[m.id])
+    }
+    //render react UI
+    const UI = this.createUI()
+    ReactDOM.createRoot(root.find('.ui').get(0)).render(
+      <React.StrictMode>
+        <UI />
+      </React.StrictMode>,
+    )
+    //init modules, set state from config then from local storage  
+    for (const m of modules) {
       await m.init()
       m.initialized = true
     }
-
+    //clean up
     this.update()
     splash.addClass('hide')
     await sleep(200)
@@ -196,9 +196,12 @@ class Bench {
   }
 }
 
+interface BaseState {
+  active: boolean
+}
 
-abstract class Module<C = any, S = any> {
-  private _active = false
+
+abstract class Module<C = any, S extends BaseState = BaseState> {
   public root = null as Cash
   public initialized = false
 
@@ -217,7 +220,7 @@ abstract class Module<C = any, S = any> {
   }
 
   get active() {
-    return this._active
+    return this.state.active
   }
 
   readonly id = "" as string
@@ -236,70 +239,24 @@ abstract class Module<C = any, S = any> {
 
   abstract render(): JSX.Element | void
 
-  set active(val) {
-    this._active = val
-    this.update()
+  set active(val: boolean) {
+    this.setState({
+      active: val
+    } as any)
   }
 
-  useState(key: keyof S, defaultVal?: S[keyof S]) {
+  useState<T extends S[keyof S]>(key: keyof S, defaultVal?: T) {
     const { state } = this
     if (state[key] == undefined) state[key] = defaultVal
     const val = state[key]
     const setVal = (val: any) => this.setState({
       [key]: val
     } as any)
-    return [val, setVal] as [typeof val, (v: typeof val) => void]
+    return [val, setVal] as [T, (v: T) => void]
   }
 
 }
 
-class Test2Module extends Module<{
-  num: number
-  name: string
-}> {
 
-  state = {
-    num: 123,
-    name: 'abc'
-  }
-
-  render() {
-    const { num } = this.state
-    return <div>
-      <div>{num}</div>
-    </div>
-  }
-
-  test() {
-    console.log('oo')
-    this.setState({ num: this.state.num + 1 })
-  }
-}
-
-class TestModule extends Module<{
-  num: number
-}> {
-
-  state = {
-    num: 100
-  }
-
-  using = {
-    Test2Module: null as unknown as Test2Module
-  }
-
-  public async init() {
-    //await sleep(2000)
-  }
-
-  render() {
-    return <div>
-      <button onClick={() => {
-        this.using.Test2Module.test()
-      }}>test</button>
-    </div>
-  }
-}
-
-
-export { Bench, Module, TestModule, Test2Module, useEffect, useEffectGlobal }
+export { Bench, Module, useEffect, useEffectGlobal }
+export type { BaseState }
