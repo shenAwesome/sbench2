@@ -65,9 +65,10 @@ body>.splash_mask {
       >.btns {
         flex: 0 0 auto;
         display: flex;
+        width: 300px;
 
         >button {
-          min-width: 100px;
+          flex: 1 1 100px;
           border: none;
           background: transparent;
           color: white;
@@ -104,6 +105,10 @@ body>.splash_mask {
 
         &.show {
           width: 300px;
+        }
+
+        >div {
+          padding: 1em;
         }
       }
     }

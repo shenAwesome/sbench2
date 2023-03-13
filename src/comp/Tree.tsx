@@ -127,7 +127,7 @@ function Tree(props: TreeProps) {
                 onClick={() => onClick(id)}>
                 <span style={{
                     display: 'inline-block',
-                    width: nestLevel * 10 + 'px'
+                    width: (nestLevel - 1) * 10 + 'px'
                 }}></span>
                 <input type={inputType} checked={isChecked} onChange={onChange} />
                 <span>{label}</span>

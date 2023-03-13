@@ -15,10 +15,19 @@ interface BenchConfig {
 
 let currentModule = null as Module
 
-function useEffect(effect: EffectCallback, deps?: DependencyList) {
+function useEffectGlobal(effect: EffectCallback, deps?: DependencyList) {
   _useEffect(() => {
     const { initialized } = currentModule
     if (initialized) {
+      return effect()
+    }
+  }, deps)
+}
+
+function useEffect(effect: EffectCallback, deps?: DependencyList) {
+  _useEffect(() => {
+    const { initialized, active } = currentModule
+    if (initialized && active) {
       return effect()
     }
   }, deps)
@@ -293,4 +302,4 @@ class TestModule extends Module<{
 }
 
 
-export { Bench, Module, TestModule, Test2Module, useEffect }
+export { Bench, Module, TestModule, Test2Module, useEffect, useEffectGlobal }

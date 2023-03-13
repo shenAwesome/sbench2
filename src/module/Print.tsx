@@ -7,13 +7,15 @@ interface State {
     _: any
 }
 
-class Draw extends Module<Config, State> {
+class Print extends Module<Config, State> {
 
-    panel = <div>Draw</div>
+    panel = <div>Print</div>
 
     render() {
 
     }
+
+
 
     async init() {
 
@@ -23,4 +25,4 @@ class Draw extends Module<Config, State> {
 }
 
 
-export { Draw }
+export { Print }

@@ -1,4 +1,4 @@
-import { Module, useEffect } from "../Bench"
+import { Module, useEffect, useEffectGlobal } from "../Bench"
 import { Tree, TreeNode } from "../comp/Tree"
 import { MapCore } from "./MapCore"
 
@@ -74,7 +74,7 @@ class Layers extends Module<Config, State> {
         const [checked, setChecked] = this.useState('checked', [])
         root.fixChecked(checked)
 
-        useEffect(() => {
+        useEffectGlobal(() => {
             console.log(checked.join(','))
         }, [checked.join(',')])
 
@@ -82,7 +82,6 @@ class Layers extends Module<Config, State> {
             <Tree root={root} checked={checked} setChecked={setChecked} />
         </div>
     }
-
 
     async init() {
         console.log(this.using.MapCore)
