@@ -7,7 +7,7 @@ import {
     get as getProjection
 } from 'ol/proj'
 import OSM from 'ol/source/OSM'
-import { Module, useEffect } from "../Bench"
+import { Module, useEffect, useEffectGlobal } from "../Bench"
 
 import $ from "cash-dom"
 import _ from 'lodash'
@@ -45,10 +45,9 @@ class MapCore extends Module<Config, State> {
 
     render() {
         const { extent } = this.state
-        useEffect(() => {
+        useEffectGlobal(() => {
             this.setExtent(extent)
         }, [extent])
-
     }
 
     getExtent() {

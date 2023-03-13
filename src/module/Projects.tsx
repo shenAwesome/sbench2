@@ -1,9 +1,10 @@
-import { BaseState, Module } from "../Bench"
+import { Module } from "../Bench"
 
 interface Config {
 
 }
-interface State extends BaseState {
+
+interface State {
 }
 
 class Projects extends Module<Config, State> {

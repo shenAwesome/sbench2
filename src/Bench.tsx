@@ -196,12 +196,9 @@ class Bench {
   }
 }
 
-interface BaseState {
-  active: boolean
-}
 
 
-abstract class Module<C = any, S extends BaseState = BaseState> {
+abstract class Module<C = any, S = any> {
   public root = null as Cash
   public initialized = false
 
@@ -220,7 +217,7 @@ abstract class Module<C = any, S extends BaseState = BaseState> {
   }
 
   get active() {
-    return this.state.active
+    return !!(this.state as any).active
   }
 
   readonly id = "" as string
@@ -258,5 +255,4 @@ abstract class Module<C = any, S extends BaseState = BaseState> {
 }
 
 
-export { Bench, Module, useEffect, useEffectGlobal }
-export type { BaseState }
+export { Bench, Module, useEffect, useEffectGlobal } 
