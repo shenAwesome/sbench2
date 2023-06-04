@@ -1,10 +1,13 @@
-import _ from 'lodash'
 import $, { Cash } from "cash-dom"
-import React, { DependencyList, EffectCallback, useEffect as _useEffect, useRef, useState } from 'react'
+import classNames from 'classnames'
+import _ from 'lodash'
+import React, {
+  DependencyList, EffectCallback,
+  useEffect as _useEffect, useRef
+} from 'react'
 import ReactDOM from 'react-dom/client'
 import './Bench.scss'
-import { sleep, useWatch, until } from './util/util'
-import classNames from 'classnames'
+import { sleep, useWatch } from './util/util'
 
 interface BenchConfig {
   title: string
@@ -13,21 +16,14 @@ interface BenchConfig {
 }
 
 
+type EffectWhen = 'Active' | 'Always'
+
 let currentModule = null as Module
 
-function useEffectGlobal(effect: EffectCallback, deps?: DependencyList) {
-  _useEffect(() => {
-    const { initialized } = currentModule
-    if (initialized) {
-      return effect()
-    }
-  }, deps)
-}
-
-function useEffect(effect: EffectCallback, deps?: DependencyList) {
+function useEffect(effect: EffectCallback, deps?: DependencyList, when = 'Active' as EffectWhen) {
   _useEffect(() => {
     const { initialized, active } = currentModule
-    if (initialized && active) {
+    if (initialized && (active || when == 'Always')) {
       return effect()
     }
   }, deps)
@@ -234,7 +230,7 @@ abstract class Module<C = any, S = any> {
 
   public async init() { }
 
-  abstract render(): JSX.Element | void
+  abstract render(): void
 
   set active(val: boolean) {
     this.setState({
@@ -255,4 +251,4 @@ abstract class Module<C = any, S = any> {
 }
 
 
-export { Bench, Module, useEffect, useEffectGlobal } 
+export { Bench, Module, useEffect }

@@ -7,7 +7,7 @@ import {
     get as getProjection
 } from 'ol/proj'
 import OSM from 'ol/source/OSM'
-import { Module, useEffect, useEffectGlobal } from "../Bench"
+import { Module, useEffect } from "../Bench"
 
 import $ from "cash-dom"
 import _ from 'lodash'
@@ -45,9 +45,9 @@ class MapCore extends Module<Config, State> {
 
     render() {
         const { extent } = this.state
-        useEffectGlobal(() => {
+        useEffect(() => {
             this.setExtent(extent)
-        }, [extent])
+        }, [extent], 'Always')
     }
 
     getExtent() {
@@ -63,7 +63,6 @@ class MapCore extends Module<Config, State> {
 
         const { config, mainDiv } = this
         const projection = getProjection(this.config.projection)
-        Object.assign(window, { getMapExtent: () => this.getExtent() })
         const target = $(`<div class='benchMap'></div>`).appendTo(mainDiv).get(0)
         const screenDiv = this.get('.screen')
         const controlDiv = $(`<div class='controls'></div>`).appendTo(screenDiv).get(0)
@@ -97,18 +96,21 @@ class MapCore extends Module<Config, State> {
                 this.setState({ extent: config.extent })
             }
         }))
-        map.on('moveend', () => {
+
+        const moveend = () => {
             const extent = this.getExtent()
             this.setState({ extent })
-        })
+        }
+        map.on('moveend', moveend)
 
         const updatePadding = () => {
             const rect1 = screenDiv.getBoundingClientRect() as any,
                 rect2 = mainDiv.get(0).getBoundingClientRect() as any,
                 padding = 'top,right,bottom,left'.split(',').map(k => Math.abs(rect1[k] - rect2[k]))
-
             map.getView().padding = padding
+            if (this.initialized) moveend()
         }
+
         updatePadding()
         new ResizeObserver(_.debounce(updatePadding, 200)).observe(screenDiv)
         this.setExtent(this.state.extent)
@@ -124,6 +126,7 @@ class MapCore extends Module<Config, State> {
         map.addLayer(layer.createLayer())
         map.addLayer(layer2.createLayer())
         console.log('map: ', map)
+        Object.assign(window, { getMapExtent: () => this.getExtent() })
     }
 }
 

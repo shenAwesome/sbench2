@@ -1,4 +1,4 @@
-import { Module, useEffectGlobal } from "../Bench"
+import { Module, useEffect } from "../Bench"
 import { Tree, TreeNode } from "../comp/Tree"
 import { MapCore } from "./MapCore"
 
@@ -9,6 +9,7 @@ interface Config {
 interface State {
     checked: string[]
 }
+
 
 class Layers extends Module<Config, State> {
 
@@ -75,9 +76,9 @@ class Layers extends Module<Config, State> {
         const [checked, setChecked] = this.useState('checked', [])
         root.fixChecked(checked)
 
-        useEffectGlobal(() => {
+        useEffect(() => {
             console.log(checked.join(','))
-        }, [checked.join(',')])
+        }, [checked.join(',')], 'Always')
 
         this.panel = <div>
             <Tree root={root} checked={checked} setChecked={setChecked} />
